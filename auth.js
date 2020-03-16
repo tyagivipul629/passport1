@@ -13,12 +13,13 @@ const nameSchema=new schema({
 const detail=mongoose.model('passport',nameSchema);
 module.exports = (passport) => {
  passport.serializeUser((user, done) => {
-        //console.log("hello");
+        //console.log(user)
         done(null, user);
     });   
      passport.deserializeUser((user, done) => {
         /*console.log(user);
         detail.findOne({_id: user.id}).then((user)=>{done(null, user);});*/
+        //console.log(user);
         done(null,user);
     });   
      passport.use(new GoogleStrategy({

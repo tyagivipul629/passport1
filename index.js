@@ -1,36 +1,36 @@
-const express = require('express'),cookieSession=require('cookie-session'),session=require('express-session'),cookieparser=require('cookie-parser'),
+const express = require('express'),cookieSession=require('cookie-session'),
+session=require('express-session'),cookieparser=require('cookie-parser'),
     app = express(),
     redis=require('redis'),
     redisStore = require('connect-redis')(session),
     client  = redis.createClient(),
     passport = require('passport');
-    /*app.use(cookieSession({
-        name:'session',
-        maxAge: 24*60*60,
-        keys:['mynameisvipul']
-    }));*/
     const auth = require('./auth.js');
-    app.use(session({ secret: "cats" ,resave : false,
-    saveUninitialized : false,cookie:{
-        maxAge:24*60*60
+    app.use(cookieparser());
+    app.use(session({ secret: "cats" ,resave : false,name:"passport",
+    saveUninitialized : true,cookie:{
+        secure:false,
+        maxAge: 0.125*60*60*1000
     },
-        store: new redisStore({ host: 'localhost', port: 6379, client: client,ttl :  300})}));
+        store: new redisStore({host: 'localhost',port: 6379,
+            client: client,ttl:450})}));
     auth(passport);
-    //app.use(session({secret: 'some secret value, changeme'}));
+    client.on('connect', function (err) {
+  console.log('connected to redis successfully');
+});
     app.use(passport.initialize());
     app.use(passport.session());
-   // app.use(cookieparser());
    app.set('view engine','ejs');
 app.get('/', (req, res) => {
-    if(req.session){res.cookie('key', req.session.key);
+    //console.log(req);
+    if(req.user){
         res.json({
-            status: 'session cookie set',
-            token:req.session.key
+            status: 'user authenticated',
+            token:req.user
 });}
         else{
-            res.cookie('key', '')
         res.json({
-            status: 'session cookie not set'
+            status: 'anonymous user'
 });
         }
     
@@ -42,20 +42,24 @@ app.get('/good',isauthenticated,(req,res)=>{
     res.send(req.user);
 });
 app.get('/profile',isauthenticated,(req,res)=>{
-    console.log(req.user.photos[0].value);
+    //console.log(req);
+    req.session.key = req.user.id;
     res.render('nextpage',{img:req.user.photos[0].value});
 });
 app.get('/logout',(req,res)=>{
     if(req.session.key){
         req.session.destroy();
-        res.redirect('/');
+        req.logout();res.clearCookie("passport");res.clearCookie("User");
+        req.session=null;req.user=null;
+        return res.redirect('/');
     }
 });
 app.get('/api/auth/google/callback',
     passport.authenticate('google',{failureRedirect:'/ghj'}),(req,res)=>{
-      console.log(req.user);
+      //console.log(req.user);
       req.session.key = req.user.id;
-      res.redirect('/profile');
+      res.cookie("User",req.user,{ maxAge: 2 * 60 * 60 * 1000, httpOnly: true ,secure: false});
+      return res.redirect('/profile');
     }
 );
 function isauthenticated(req, res, next) {
