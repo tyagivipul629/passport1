@@ -36,7 +36,8 @@ app.get('/', (req, res) => {
     
 });
 app.get('/auth/google', passport.authenticate('google', {
-    scope: ['https://www.googleapis.com/auth/userinfo.profile']
+    scope: ['https://www.googleapis.com/auth/userinfo.profile'],
+    prompt: "select_account"
 }));
 app.get('/good',isauthenticated,(req,res)=>{
     res.send(req.user);
