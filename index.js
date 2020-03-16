@@ -10,7 +10,7 @@ const express = require('express'),cookieSession=require('cookie-session'),sessi
         keys:['mynameisvipul']
     }));*/
     const auth = require('./auth.js');
-    app.use(session({ secret: "cats" ,resave : false,
+    app.use(session({ secret: "cats" ,resave : false,name:"passport",
     saveUninitialized : false,cookie:{
         maxAge:24*60*60
     },
@@ -22,13 +22,13 @@ const express = require('express'),cookieSession=require('cookie-session'),sessi
    // app.use(cookieparser());
    app.set('view engine','ejs');
 app.get('/', (req, res) => {
-    if(req.session){res.cookie('key', req.session.key);
+    if(req.session){
         res.json({
             status: 'session cookie set',
             token:req.session.key
 });}
         else{
-            res.cookie('key', '')
+            
         res.json({
             status: 'session cookie not set'
 });
@@ -48,7 +48,8 @@ app.get('/profile',isauthenticated,(req,res)=>{
 app.get('/logout',(req,res)=>{
     if(req.session.key){
         req.session.destroy();
-        res.redirect('/');
+        req.session=null;req.user=null;
+        return res.redirect('/');
     }
 });
 app.get('/api/auth/google/callback',
