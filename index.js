@@ -1,11 +1,12 @@
 const express = require('express'),cookieSession=require('cookie-session'),
 session=require('express-session'),cookieparser=require('cookie-parser'),
-    app = express(),
+    app = express(),bodyparser=require('body-parser'),
     redis=require('redis'),
     redisStore = require('connect-redis')(session),
     client  = redis.createClient(),
     passport = require('passport');
     const auth = require('./auth.js');
+    app.use(bodyparser.urlencoded({extended: true}));
     app.use(cookieparser());
     app.use(session({ secret: "cats" ,resave : false,name:"passport",
     saveUninitialized : true,cookie:{
@@ -23,7 +24,7 @@ session=require('express-session'),cookieparser=require('cookie-parser'),
    app.set('view engine','ejs');
 app.get('/', (req, res) => {
     //console.log(req);
-    if(req.user){
+    /*if(req.user){
         res.json({
             status: 'user authenticated',
             token:req.user
@@ -32,21 +33,38 @@ app.get('/', (req, res) => {
         res.json({
             status: 'anonymous user'
 });
-        }
+        }*/
+        res.sendFile(__dirname+"/form.html");
     
 });
 app.get('/auth/google', passport.authenticate('google', {
-    scope: ['https://www.googleapis.com/auth/userinfo.profile']
+    scope: ['https://www.googleapis.com/auth/userinfo.profile'],
+    prompt: "select_account"
 }));
 app.get('/good',isauthenticated,(req,res)=>{
     res.send(req.user);
+});
+app.post('/login', passport.authenticate('local-login', { // redirect to the secure profile section
+            failureRedirect : '/login' // redirect back to the signup page if there is an error
+            // allow flash messages
+        }),(req,res)=>{
+    //console.log(req.user);
+    req.session.key = req.user.id;
+      res.cookie("User",req.user,{ maxAge: 2 * 60 * 60 * 1000, httpOnly: true ,secure: false});
+      return res.redirect('/profile1');
 });
 app.get('/profile',isauthenticated,(req,res)=>{
     //console.log(req);
     req.session.key = req.user.id;
     res.render('nextpage',{img:req.user.photos[0].value});
 });
+app.get('/profile1',isauthenticated,(req,res)=>{
+    //console.log(req);
+    req.session.key = req.user._id;
+    res.render('profile',{user:req.user});
+});
 app.get('/logout',(req,res)=>{
+    console.log(req.session);
     if(req.session.key){
         req.session.destroy();
         req.logout();res.clearCookie("passport");res.clearCookie("User");
@@ -56,7 +74,7 @@ app.get('/logout',(req,res)=>{
 });
 app.get('/api/auth/google/callback',
     passport.authenticate('google',{failureRedirect:'/ghj'}),(req,res)=>{
-      //console.log(req.user);
+      console.log(req.user);
       req.session.key = req.user.id;
       res.cookie("User",req.user,{ maxAge: 2 * 60 * 60 * 1000, httpOnly: true ,secure: false});
       return res.redirect('/profile');
