@@ -6,3 +6,4 @@ If you want to test Google sign in just comment the res.sendFile line in app.get
 
 If you want to test Local signin, then comment the entire code in app.get('/') except res.sendfile
 Edited by me.
+Again edited.
