@@ -5,5 +5,4 @@ I have implemented Google signin using Passport OAuth2.0 strategy and also have 
 If you want to test Google sign in just comment the res.sendFile line in app.get('/').
 
 If you want to test Local signin, then comment the entire code in app.get('/') except res.sendfile
-Edited by me.
-Again edited.
+Edited by me. Satish Tyagi
